@@ -1,0 +1,11 @@
+Beginings of a Gradebook for use by students to keep track of their grades.
+Written in Java, using Java Swing for the GUI.
+
+
+Expected Features:
+Save and load data for Semesters, Classes and gradeables.
+Setting to select types of grading.
+Automatic calculation of gpa for classes and semesters.
+Edit and update grades for classes and gradeables.
+Delete semesters, classes and gradeables.
+Holo themes and ability to switch between light and dark Holo.
