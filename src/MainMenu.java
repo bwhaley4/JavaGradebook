@@ -123,7 +123,8 @@ public class MainMenu extends JFrame implements ActionListener {
 	 * so that the appropriate file can be loaded for each object in the user's
 	 * gradebook. The format is as follows:
 	 * 
-	 * <semester_1>,<class_1>;<class_2>;...;<class_n>,<gradeable_1>;...;<gradeable_n;\n
+	 * <semester_1>,<class_1>,<gradeable_1>;...;<gradeable_n>,
+	 * <class_2>,<gradeable_1>;...;<gradeable_n>...,<class_n><gradeable_1>;...;<gradeable_n>\n
 	 * <semester_2>...\n
 	 * ...
 	 * <semester_n>\n
@@ -177,6 +178,42 @@ public class MainMenu extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * Saves the manifest according to the format specified by loadManifest.
+	 * 
+	 * <semester_1>,<class_1>,<gradeable_1>;...;<gradeable_n>,
+	 * <class_2>,<gradeable_1>;...;<gradeable_n>...,<class_n><gradeable_1>;...;<gradeable_n>\n
+	 * <semester_2>...\n
+	 * ...
+	 * <semester_n>\n
+	 * EOF
+	 * 
+	 * @return
+	 * 			true if no errors.
+	 */
+	public boolean saveManifest() {
+		// TODO:
+		if (file != null) {
+			try {
+				BufferedWriter out = new BufferedWriter(new FileWriter(file));
+				for (Semester s : data.getSemesters()) {
+					out.write(s.getName());
+					out.write(",");
+					for (Class c : s.getClasses()) {
+						out.write(c.getName());
+						out.write(";");
+					}
+
+				}
+				return true;
+			} catch (Exception e) {
+
+			}
+
+		}
+		return false;
+	}
+
+	/**
 	 * Loads a semester object from the title.
 	 * 
 	 * @param title
@@ -213,26 +250,6 @@ public class MainMenu extends JFrame implements ActionListener {
 	 */
 	public boolean loadGradeable(String title) {
 		// TODO:
-		return false;
-	}
-
-	/**
-	 * Saves the manifest according to the format specified by loadManifest.
-	 * 
-	 * @return
-	 * 			true if no errors.
-	 */
-	public boolean saveManifest() {
-		// TODO:
-		if (file != null) {
-			try {
-				BufferedWriter out = new BufferedWriter(new FileWriter(file));
-				return true;
-			} catch (Exception e) {
-
-			}
-
-		}
 		return false;
 	}
 
