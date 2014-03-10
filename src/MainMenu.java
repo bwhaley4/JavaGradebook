@@ -42,6 +42,9 @@ public class MainMenu extends JFrame implements ActionListener {
 	private static final String HELP = "WHAT THE HECK IS THIS??";
 	private ApplicationData data;
 
+	private static File directory = new File(".");
+	private static String HOME_DIRECTORY = "";
+
 	private File file = null;
 
 	/**
@@ -116,6 +119,9 @@ public class MainMenu extends JFrame implements ActionListener {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(400, 600);
 		frame.setVisible(true);
+
+		// Sets the absolute path of the current working directory.
+		HOME_DIRECTORY = directory.getAbsolutePath();
 	}
 
 	/**
@@ -123,11 +129,11 @@ public class MainMenu extends JFrame implements ActionListener {
 	 * so that the appropriate file can be loaded for each object in the user's
 	 * gradebook. The format is as follows:
 	 * 
-	 * <semester_1>,<class_1>,<gradeable_1>;...;<gradeable_n>,
-	 * <class_2>,<gradeable_1>;...;<gradeable_n>...,<class_n><gradeable_1>;...;<gradeable_n>\n
-	 * <semester_2>...\n
+	 * <semester_1>:<class_1>;<gradeable_1>;...;<gradeable_n>,
+	 * <class_2>;<gradeable_1>;...;<gradeable_n>...,<class_n>;<gradeable_1>;...;<gradeable_n>:\n
+	 * <semester_2>:...\n
 	 * ...
-	 * <semester_n>\n
+	 * <semester_n>:\n
 	 * EOF
 	 * 
 	 * After parsing the manifest all of the data for each object listed in the manifest
@@ -156,16 +162,24 @@ public class MainMenu extends JFrame implements ActionListener {
 				// Read each line and parse according to format specified above.
 				while (fullLine.hasNext()) {
 					String line = fullLine.next();
-					String[] splitLine = line.split(",");
+					// Splits line to
+					// [<semester>][<class_1>;<gradeable_1>;...<gradeable_n>,...,<class_n>]
+					String[] splitLine = line.split(":");
 					String semester = splitLine[0];
-					String[] classes = splitLine[1].split(";");
-					String[] gradeables = splitLine[2].split(";");
-					loadSemester(semester);
+
+					// Splits splitLine into
+					// [<class_1>;<gradeable_1>...<gradeable_n>]...[<class_n>]
+					String[] classes = splitLine[1].split(",");
+
+					Semester sem = loadSemester(semester);
 					for (String s : classes) {
-						loadClass(s);
-					}
-					for (String s : gradeables) {
-						loadGradeable(s);
+						// Splits s into
+						// [<class>][<gradeable_1>]...[<gradeable_n>]
+						String[] class_info = s.split(";");
+						Class c = loadClass(s, sem);
+						for (int i = 1; i < class_info.length; i++) {
+							loadGradeable(class_info[i], c);
+						}
 					}
 				}
 				inputStream.close();
@@ -180,29 +194,33 @@ public class MainMenu extends JFrame implements ActionListener {
 	/**
 	 * Saves the manifest according to the format specified by loadManifest.
 	 * 
-	 * <semester_1>,<class_1>,<gradeable_1>;...;<gradeable_n>,
-	 * <class_2>,<gradeable_1>;...;<gradeable_n>...,<class_n><gradeable_1>;...;<gradeable_n>\n
-	 * <semester_2>...\n
+	 * <semester_1>:<class_1>;<gradeable_1>;...;<gradeable_n>,
+	 * <class_2>;<gradeable_1>;...;<gradeable_n>...,<class_n>;<gradeable_1>;...;<gradeable_n>:\n
+	 * <semester_2>:...\n
 	 * ...
-	 * <semester_n>\n
+	 * <semester_n>:\n
 	 * EOF
 	 * 
 	 * @return
 	 * 			true if no errors.
 	 */
 	public boolean saveManifest() {
-		// TODO:
 		if (file != null) {
 			try {
+				@SuppressWarnings("resource")
 				BufferedWriter out = new BufferedWriter(new FileWriter(file));
 				for (Semester s : data.getSemesters()) {
 					out.write(s.getName());
-					out.write(",");
+					out.write(":");
 					for (Class c : s.getClasses()) {
 						out.write(c.getName());
 						out.write(";");
+						for (Gradeable g : c.getGradeables()) {
+							out.write(g.getName());
+							out.write(";");
+						}
 					}
-
+					out.write("\n");
 				}
 				return true;
 			} catch (Exception e) {
@@ -215,6 +233,12 @@ public class MainMenu extends JFrame implements ActionListener {
 
 	/**
 	 * Loads a semester object from the title.
+	 * Information is loaded from a file, the file location will always be
+	 * HOME_DIRECTORY/<semester_name>.sem
+	 * 
+	 * File Contents:
+	 * NAME\n
+	 * 
 	 * 
 	 * @param title
 	 * 			The title of the semester to be loaded from a file.
@@ -222,9 +246,12 @@ public class MainMenu extends JFrame implements ActionListener {
 	 * @return
 	 * 			true if successful.
 	 */
-	public boolean loadSemester(String title) {
+	public Semester loadSemester(String title) {
 		// TODO:
-		return false;
+		File sem = new File(HOME_DIRECTORY + "/" + title + ".sem");
+		Semester s = new Semester(title);
+		data.addNewSemester(s);
+		return s;
 	}
 
 	/**
@@ -232,12 +259,17 @@ public class MainMenu extends JFrame implements ActionListener {
 	 * 
 	 * @param title
 	 * 			title of the class to be loaded.
+	 * @param sem
+	 * 			the semester to which the class belongs.
 	 * @return
-	 * 			true if successful.
+	 * 			the loaded class.
 	 */
-	public boolean loadClass(String title) {
+	public Class loadClass(String title, Semester sem) {
 		// TODO:
-		return false;
+		File cls = new File(HOME_DIRECTORY + "/" + title + ".cls");
+		Class c = new Class(title);
+		sem.addClass(c);
+		return c;
 	}
 
 	/**
@@ -245,12 +277,17 @@ public class MainMenu extends JFrame implements ActionListener {
 	 * 
 	 * @param title
 	 * 			the title of the gradeable to be loaded.
+	 * @param c
+	 * 			the class that the gradeable belongs to.
 	 * @return
-	 * 			true if successful.
+	 * 			the loaded gradeable
 	 */
-	public boolean loadGradeable(String title) {
+	public Gradeable loadGradeable(String title, Class c) {
 		// TODO:
-		return false;
+		File gdb = new File(HOME_DIRECTORY + "/" + title + ".gdb");
+		Gradeable g = new Gradeable(title);
+		c.addGrade(g);
+		return g;
 	}
 
 	/**
@@ -295,6 +332,7 @@ public class MainMenu extends JFrame implements ActionListener {
 	 */
 	public void showAlert(String message) {
 		// TODO:
+		return;
 	}
 
 }
